@@ -1,0 +1,10 @@
+3/30/2014
+	Captures packets in monitor mode
+	Filters out and prints source MAC address
+
+What's Next:
+	Time stamp
+	Filter RadioTap header:
+		Signal Strength
+	GUI
+	White / Black list Filtering
