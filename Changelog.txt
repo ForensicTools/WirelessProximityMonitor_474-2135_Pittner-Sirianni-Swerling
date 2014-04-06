@@ -1,10 +1,19 @@
-3/30/2014
+[3/30/2014]
 	Captures packets in monitor mode
 	Filters out and prints source MAC address
 
-What's Next:
+[4/6/2014]
+	Improved organization
+	Prints only source MAC
+	Static RadioTap field parsing for signal strength
 	Time stamp
-	Filter RadioTap header:
-		Signal Strength
+	Channel rotation
+
+[What's Next]
+	Dynamic RadioTap prasing
 	GUI
 	White / Black list Filtering
+	Bluetooth
+	Device selection
+	Multi device capture
+	Capture analysis
