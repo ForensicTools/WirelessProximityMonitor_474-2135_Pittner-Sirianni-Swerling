@@ -1,6 +1,9 @@
 3/30/2014
 	Captures packets in monitor mode
 	Filters out and prints source MAC address
+	
+4/6/14
+	Started working on creating Bluetooth captures
 
 What's Next:
 	Time stamp
