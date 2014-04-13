@@ -9,11 +9,17 @@
 	Time stamp
 	Channel rotation
 
-[What's Next]
-	Dynamic RadioTap prasing
+[4/13/2014]
 	GUI
-	White / Black list Filtering
+	Dynamic RadioTap parsing
+	   -Proper signal strength on all platforms
+	   -Discards bad FCS packets
+	
+[What's Next]
+	Capture filters
+	Display filters
+	Analytic functions
+	Implement capturing into GUI	
+
+[Tenative]
 	Bluetooth
-	Device selection
-	Multi device capture
-	Capture analysis
