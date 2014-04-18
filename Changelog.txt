@@ -1,0 +1,25 @@
+[3/30/2014]
+	Captures packets in monitor mode
+	Filters out and prints source MAC address
+
+[4/6/2014]
+	Improved organization
+	Prints only source MAC
+	Static RadioTap field parsing for signal strength
+	Time stamp
+	Channel rotation
+
+[4/13/2014]
+	GUI
+	Dynamic RadioTap parsing
+	   -Proper signal strength on all platforms
+	   -Discards bad FCS packets
+	
+[What's Next]
+	Capture filters
+	Display filters
+	Analytic functions
+	Implement capturing into GUI	
+
+[Tenative]
+	Bluetooth
