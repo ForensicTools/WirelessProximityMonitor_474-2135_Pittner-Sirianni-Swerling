@@ -1,6 +1,9 @@
 [3/30/2014]
 	Captures packets in monitor mode
 	Filters out and prints source MAC address
+	
+4/6/14
+	Started working on creating Bluetooth captures
 
 [4/6/2014]
 	Improved organization
@@ -11,6 +14,7 @@
 
 [4/13/2014]
 	GUI
+<<<<<<< HEAD
 	Dynamic RadioTap parsing
 	   -Proper signal strength on all platforms
 	   -Discards bad FCS packets
@@ -23,3 +27,6 @@
 
 [Tenative]
 	Bluetooth
+=======
+	White / Black list Filtering
+>>>>>>> 3fe604b8dd8c01c748a948c4184ba294035b50fb
