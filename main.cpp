@@ -1,15 +1,17 @@
 //g++ main.cpp mainwindow.cpp -o program `pkg-config --cflags --libs gtkmm-3.0`
 
-#include "mainwindow.h"
 #include <gtkmm/application.h>
+#include "mainwindow.h"
 
 int main(int argc, char *argv[])
 {
-  Glib::RefPtr<Gtk::Application> app =
-    Gtk::Application::create(argc, argv,
-      "org.gtkmm.examples.base");
+	pthread_t chanThread;			//Thread for rotating WiFi channels
 
-  MainWindow window;
+	Glib::RefPtr<Gtk::Application> app =
+	Gtk::Application::create(argc, argv,
+	  "org.gtkmm.examples.base");
 
-  return app->run(window);
+	MainWindow window;
+
+	return app->run(window);
 }

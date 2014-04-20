@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include <iostream>
-#include <gtk/gtk.h>
+#include <iomanip>
+#include <gtkmm.h>
 
 MainWindow::MainWindow()
 {
@@ -19,6 +20,12 @@ MainWindow::MainWindow()
 		menubar->append(*menuitem_file);
 		filemenu = Gtk::manage(new Gtk::Menu());
 		menuitem_file->set_submenu(*filemenu);
+		fileitem_open = Gtk::manage(new Gtk::MenuItem("_Open", true));
+		fileitem_open->signal_activate().connect(sigc::mem_fun(*this, &MainWindow::on_open_click));
+		filemenu->append(*fileitem_open);
+		fileitem_save = Gtk::manage(new Gtk::MenuItem("_Save", true));
+		fileitem_save->signal_activate().connect(sigc::mem_fun(*this, &MainWindow::on_save_click));
+		filemenu->append(*fileitem_save);
 		fileitem_exit = Gtk::manage(new Gtk::MenuItem("_Exit", true));
 		fileitem_exit->signal_activate().connect(sigc::mem_fun(*this, &MainWindow::on_quit_click));
 		filemenu->append(*fileitem_exit);
@@ -29,8 +36,9 @@ MainWindow::MainWindow()
 		menuitem_capture->set_submenu(*capturemenu);
 		captureitem_start = Gtk::manage(new Gtk::MenuItem("_Start", true));
 		captureitem_stop = Gtk::manage(new Gtk::MenuItem("_Stop", true));
-		captureitem_start->signal_activate().connect(sigc::mem_fun(*this, &MainWindow::capture_window));
-		captureitem_stop->signal_activate().connect(sigc::mem_fun(*this, &MainWindow::push_packet));
+		captureitem_start->signal_activate().connect(sigc::mem_fun(*this, &MainWindow::captureStartBtn));
+		captureitem_stop->signal_activate().connect
+			(sigc::mem_fun(*this, &MainWindow::captureStopBtn));
 		capturemenu->append(*captureitem_start);
 		capturemenu->append(*captureitem_stop);
 
@@ -40,25 +48,34 @@ MainWindow::MainWindow()
     grid->set_column_spacing(5);
     vbox->add(*grid);
 
+    Gtk::ScrolledWindow *scrollWindow = Gtk::manage(new Gtk::ScrolledWindow);
+    scrollWindow->set_policy(Gtk::POLICY_AUTOMATIC, Gtk::POLICY_AUTOMATIC);
+    grid->attach(*scrollWindow, 0, 1, 16, 8);
+
     label = Gtk::manage(new Gtk::Label);
     label->set_markup("Display Filter: ");
     grid->attach(*label, 0, 0, 1, 1);
 
     filter = Gtk::manage(new Gtk::Entry);
+    filter->set_hexpand(true);
     grid->attach_next_to(*filter, *label, Gtk::POS_RIGHT, 13, 1);
 
     enable_filter = Gtk::manage(new Gtk::Button("Apply"));
-    enable_filter->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::toggle_filter));
+    enable_filter->signal_clicked().connect
+    	(sigc::mem_fun(*this, &MainWindow::toggle_filter));
     grid->attach_next_to(*enable_filter, *filter, Gtk::POS_RIGHT, 1, 1);
 
     clear_filter = Gtk::manage(new Gtk::Button("Clear"));
-    clear_filter->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::toggle_filter));
+    clear_filter->signal_clicked().connect
+    	(sigc::mem_fun(*this, &MainWindow::toggle_filter));
     grid->attach_next_to(*clear_filter, *enable_filter, Gtk::POS_RIGHT, 1, 1);
 
-    Gtk::TreeView *treeview = Gtk::manage(new Gtk::TreeView);
+    treeview = Gtk::manage(new Gtk::TreeView);
+    scrollWindow->add(*treeview);
+    treeview->set_vscroll_policy(Gtk::SCROLL_NATURAL);
     treeview->set_hexpand(true);
     treeview->set_vexpand(true);
-    grid->attach(*treeview, 0, 1, 16, 8);
+    vbox->pack_start(*scrollWindow);
 
     refTreeModel = Gtk::ListStore::create(columns);
     treeview->set_model(refTreeModel);
@@ -67,37 +84,96 @@ MainWindow::MainWindow()
 	treeview->append_column("MAC Address", columns.col_mac);
 	treeview->append_column("dBm", columns.col_dbm);
 
-	/*
-    label = Gtk::manage(new Gtk::Label);
-    label->set_markup("<b>Text To Add: </b>");
-    grid->attach(*label, 0, 1, 1, 1);
-
-    text = Gtk::manage(new Gtk::Entry);
-    grid->attach(*text, 1, 1, 2, 1);
-
-    Gtk::Button *button = Gtk::manage(new Gtk::Button("Add Text"));
-    button->signal_clicked().connect(sigc::mem_fun(*this, &MainWindow::on_button_click));
-    grid->attach(*button, 2, 2, 1, 1);
-    */
     vbox->show_all();
 }
 
 MainWindow::~MainWindow()
 {
+	pthread_t tmp;
+	while(!captureThreads.empty()) {
+		tmp = captureThreads.front();
+		pthread_exit( &tmp );
+	}
 }
 
-void MainWindow::push_packet()
+void MainWindow::captureStartBtn(void) {
+	pthread_t capture;
+	pthread_create(&capture, NULL, &MainWindow::createCaptureThread, this);
+	captureThreads.push_back(capture);
+}
+
+void MainWindow::captureStopBtn() {
+	pthread_t tmp;
+	while(!captureThreads.empty()) {
+		tmp = captureThreads.front();
+		captureThreads.pop_front();
+		pthread_exit( &tmp );
+	}
+}
+
+void * MainWindow::printCapture(void)
 {
-	Glib::ustring date = "packet->date;";
-	Glib::ustring time = "packet->time;";
-	Glib::ustring mac = "packet->mac";
-	int dbm = -42;
-	
-	Gtk::TreeModel::Row row = *(refTreeModel->append());
-	row[columns.col_date] = date;
-	row[columns.col_time] = time;
-	row[columns.col_mac] = mac;
-	row[columns.col_dbm] = dbm;
+	struct packet_structure packet;
+	Capture packet_capture;
+	time_t epoch_time;
+	struct tm * ptm;
+	Gtk::TreeModel::Row row;
+	Glib::ustring date;
+	Glib::ustring gm_time;
+	Glib::ustring mac;
+
+	std::stringstream ss;
+	ss << std::hex << std::setfill('0');
+
+
+	for(;;) {//int i = 0; i <= 100; i++) {
+		packet = packet_capture.CapturePacket();
+		packetsFiltered.push_front(packet);
+
+		//Convert epoch time
+		epoch_time = packet.epoch_time;
+		ptm = gmtime (&epoch_time);
+
+		//Date in readable format
+		date = static_cast<std::ostringstream*>
+			( &(std::ostringstream() << ptm->tm_year+1900) )->str();
+		date += "-";
+		date += static_cast<std::ostringstream*>
+			( &(std::ostringstream() << ptm->tm_mon+1) )->str();
+		date += "-";
+		date += static_cast<std::ostringstream*>
+			( &(std::ostringstream() << ptm->tm_mday) )->str();
+		
+		//Time in readable format
+		gm_time = static_cast<std::ostringstream*>
+			( &(std::ostringstream() << ptm->tm_hour) )->str();
+		gm_time += ":";
+		gm_time += static_cast<std::ostringstream*>
+			( &(std::ostringstream() << ptm->tm_min) )->str();
+		gm_time += ":";
+		gm_time += static_cast<std::ostringstream*>
+			( &(std::ostringstream() << ptm->tm_sec) )->str();
+		
+		//MAC Address
+		for(int i = 0; i <= 6; i++) {
+			if(i!=0) {
+				ss << ":";
+			}
+			ss << std::setw(2) << static_cast<unsigned>(packet.addr[i]);
+		} mac = ss.str();
+
+		//Output to GUI
+		row = *(refTreeModel->append());
+		row[columns.col_date] = date;
+		row[columns.col_time] = gm_time;
+		row[columns.col_mac] = mac;
+		row[columns.col_dbm] = packet.dbm;
+		treeview->queue_draw();
+		ss.str(std::string());
+		mac.clear();
+		//usleep(1000 * 1000);
+	}
+	return 0;
 }
 
 void MainWindow::on_quit_click()
@@ -105,51 +181,124 @@ void MainWindow::on_quit_click()
     hide();
 }
 
+void MainWindow::on_open_click() {
+	Gtk::Window *window = new Gtk::Window();
+	Gtk::Grid *grid = Gtk::manage(new Gtk::Grid);
+
+	window->set_title ("Open Capture");
+	window->set_border_width(10);
+	window->set_default_size(300, 150);
+	window->set_position(Gtk::WIN_POS_CENTER);
+
+	Gtk::Label *fileNameLabel = new Gtk::Label();
+	Gtk::Entry *fileNameEntry = new Gtk::Entry();
+	Gtk::Button *open_btn = new Gtk::Button("Open");
+	Gtk::Button *cancel_btn = new Gtk::Button("Cancel");
+
+	grid->set_border_width(5);
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(5);
+	window->add(*grid);
+
+	fileNameLabel->set_markup("Enter a file name:");
+	fileNameEntry->set_hexpand(true);
+
+    grid->attach(*fileNameLabel, 0, 0, 1, 1);
+    grid->attach(*fileNameEntry, 0, 1, 5, 1);
+    grid->attach(*cancel_btn, 1, 2, 1, 1);
+    grid->attach(*open_btn, 3, 2, 1, 1);
+
+    open_btn->signal_clicked().connect
+		(sigc::bind<std::string>
+		(sigc::ptr_fun(&ReadWrite::writeToFile), 
+		(std::string)fileNameEntry->get_text()) );
+	cancel_btn->signal_clicked().connect
+		(sigc::mem_fun(*this, &MainWindow::on_quit_click));
+
+	window->show_all();
+}
+
+void MainWindow::on_save_click() {
+	Gtk::Window *window = new Gtk::Window();
+	Gtk::Grid *grid = Gtk::manage(new Gtk::Grid);
+
+	window->set_title ("Save Capture");
+	window->set_border_width(10);
+	window->set_default_size(300, 150);
+	window->set_position(Gtk::WIN_POS_CENTER);
+
+	Gtk::Label *fileNameLabel = new Gtk::Label();
+	Gtk::Entry *fileNameEntry = new Gtk::Entry();
+	Gtk::Button *save_btn = new Gtk::Button("Save");
+	Gtk::Button *cancel_btn = new Gtk::Button("Cancel");
+
+	grid->set_border_width(5);
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(5);
+	window->add(*grid);
+
+	fileNameLabel->set_markup("Enter a file name:");
+	fileNameEntry->set_hexpand(true);
+
+    grid->attach(*fileNameLabel, 0, 0, 1, 1);
+    grid->attach(*fileNameEntry, 0, 1, 5, 1);
+    grid->attach(*cancel_btn, 1, 2, 1, 1);
+    grid->attach(*save_btn, 3, 2, 1, 1);
+
+    save_btn->signal_clicked().connect
+		(sigc::bind<std::string, std::list<packet_structure> >
+		(sigc::ptr_fun(&ReadWrite::writeToFile), 
+		fileNameEntry->get_text(), packetsFiltered) );
+	cancel_btn->signal_clicked().connect
+		(sigc::mem_fun(*this, &MainWindow::on_quit_click));
+
+	window->show_all();
+}
+
 void MainWindow::toggle_filter() {
 
 }
 
 void MainWindow::capture_window() {
-	GtkWidget *window;
-	GtkWidget *box;
-	GtkWidget *grid;
 
-	GtkWidget *int_check_btn;
-	GtkWidget *capture_filter_label;
-	GtkWidget *capture_filter_entry;
-	GtkWidget *ok_btn;
-	GtkWidget *cancel_btn;
+	Gtk::Window *window = new Gtk::Window();
+	Gtk::Grid *grid = Gtk::manage(new Gtk::Grid);
 
-	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title(GTK_WINDOW(window), "Capture Settings");
-	gtk_window_set_default_size(GTK_WINDOW(window), 500, 200);
-	gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER_ON_PARENT);
-	gtk_window_set_keep_above(GTK_WINDOW(window), true);
-	//gtk_window_set_transient_for(GTK_WINDOW(window) )
+	window->set_title ("Capture Settings");
+	window->set_border_width(10);
+	window->set_default_size(500, 200);
+	window->set_position(Gtk::WIN_POS_CENTER);
 
-	int_check_btn = gtk_check_button_new_with_label("wlan0");
+	Gtk::RadioButton *int_radio_btn = new Gtk::RadioButton("wlan0");
+	Gtk::Label *capture_filter_label = new Gtk::Label();
+	Gtk::Entry *capture_filter_entry = new Gtk::Entry();
+	Gtk::Button *ok_btn = new Gtk::Button("Ok");
+	Gtk::Button *cancel_btn = new Gtk::Button("Cancel");
 
-	capture_filter_label = gtk_label_new("Capture Filter: ");
-	capture_filter_entry = gtk_entry_new();
+	grid->set_border_width(5);
+    grid->set_row_spacing(5);
+    grid->set_column_spacing(5);
+	window->add(*grid);
 
-	ok_btn = gtk_button_new_with_label("Ok");
-	cancel_btn = gtk_button_new_with_label("Cancel");
+	capture_filter_label->set_markup("Capture Filter: ");
+	capture_filter_entry->set_hexpand(true);
 
-	grid = gtk_grid_new();
-    gtk_grid_set_row_spacing(GTK_GRID(grid), 5);
-    gtk_grid_set_column_spacing(GTK_GRID(grid), 5);
-	gtk_container_add(GTK_CONTAINER(window), grid);
+	//ok_btn->signal_clicked().connect
+	//	(sigc::mem_fun(*this, &MainWindow::push_packet));
 
-	
+	grid->attach(*int_radio_btn, 1, 0, 3, 1);
+    grid->attach(*capture_filter_label, 0, 1, 1, 1);
+    grid->attach_next_to(*capture_filter_entry, 
+    	*capture_filter_label, Gtk::POS_RIGHT, 4, 1);
+    grid->attach(*cancel_btn, 1, 2, 1, 1);
+    grid->attach(*ok_btn, 3, 2, 1, 1);
 
-    gtk_grid_attach(GTK_GRID(grid), int_check_btn, 1, 0, 3, 1);
-    gtk_grid_attach(GTK_GRID(grid), capture_filter_label, 0, 1, 1, 1);
-    gtk_grid_attach_next_to(GTK_GRID(grid), capture_filter_entry, 
-    	capture_filter_label, GTK_POS_RIGHT, 9, 1);
-    gtk_grid_attach(GTK_GRID(grid), cancel_btn, 1, 2, 1, 1);
-    gtk_grid_attach(GTK_GRID(grid), ok_btn, 3, 2, 1, 1);
+	window->show_all();
 
-	gtk_widget_show_all(window);
+	gtk_main();
+}
 
-	//gtk_main();
+
+void capture_window_ok_btn(void) {
+	gtk_main_quit();
 }

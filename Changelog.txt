@@ -14,12 +14,15 @@
 	Dynamic RadioTap parsing
 	   -Proper signal strength on all platforms
 	   -Discards bad FCS packets
+
+[4/20/2014]
+	Began GUI merger with functions
+	Save and Open Capabilites
+	Initial Filter structure
 	
 [What's Next]
-	Capture filters
-	Display filters
-	Analytic functions
-	Implement capturing into GUI	
+	Complete capture/dsplay filters
+	Finish GUI merger
 
 [Tenative]
-	Bluetooth
+	Graphing functions

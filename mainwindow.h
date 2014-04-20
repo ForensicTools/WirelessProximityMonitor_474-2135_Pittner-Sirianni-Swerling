@@ -2,23 +2,45 @@
 #define GTKMM_MAINWINDOW_H
 
 #include <gtkmm.h>
+#include <list>
+#include <time.h>
+#include <sstream>
+#include <string>
+#include <pthread.h>
+#include "capture.h"
+#include "ReadWriteFiles.h"
+#include "PacketStructure.h"
 
 class MainWindow : public Gtk::Window
 {
 public:
 	MainWindow();
 	virtual ~MainWindow();
+
+	static void *createCaptureThread(void *context) {
+		return ((MainWindow *)context)->printCapture();
+	}
+	
 	Gtk::TreeView *treeview;
 	Gtk::Label *label;
 	Gtk::Entry *filter;
 	Gtk::Button *enable_filter;
 	Gtk::Button *clear_filter;
-	
+	std::list<pthread_t> captureThreads;
+	std::list<packet_structure> packetsCaptured;
+	std::list<packet_structure> packetsFiltered;
+
 protected:
+	void on_open_click();
+	void on_save_click();
 	void on_quit_click();
-	void push_packet();
 	void toggle_filter();
 	void capture_window();
+	void capture_window_ok_btn(void);
+	void * printCapture(void);
+	void captureStartBtn(void);
+	void captureStopBtn(void);
+
   
 	class ModelColumns : public Gtk::TreeModel::ColumnRecord
 	{
@@ -39,6 +61,8 @@ private:
 	Gtk::MenuItem *menuitem_file;
 	Gtk::Menu *filemenu;
 		Gtk::MenuItem *fileitem_exit;
+		Gtk::MenuItem *fileitem_open;
+		Gtk::MenuItem *fileitem_save;
 
 	Gtk::MenuItem *menuitem_capture;
 	Gtk::Menu *capturemenu;
