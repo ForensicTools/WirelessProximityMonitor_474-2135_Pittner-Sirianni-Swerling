@@ -17,12 +17,22 @@
 
 [4/20/2014]
 	Began GUI merger with functions
-	Save and Open Capabilites
+	Save and Open Capabilities
 	Initial Filter structure
 	
+[4/27/2014]
+	Finished merger of available classes
+	Fixed issues with saving
+	More complete filtering
+		Unique MACs
+		Time
+		Date
+		Day of the week
+		Month of the year
+		
 [What's Next]
-	Complete capture/dsplay filters
-	Finish GUI merger
-
+	Fix file opening class
+	Fix issue with TreeView throwing errors when too much data is added
+	
 [Tenative]
 	Graphing functions

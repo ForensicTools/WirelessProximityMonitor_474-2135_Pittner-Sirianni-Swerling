@@ -5,39 +5,53 @@
 #include <time.h>
 #include <sstream>
 #include <string>
+#include <iomanip>
 #include <vector>
+#include <list>
+#include <unistd.h>
 #include "PacketStructure.h"
 
-class MainWindow : public Gtk::Window
+class FILTER
 {
 public:
 	FILTER();
 	virtual ~FILTER();
 
-	bool filterPacket(packet_structure);
+	bool filterPacket(packet_structure, std::list<packet_structure>);
 	bool setFilter(std::string);
 	void clearFilter(void);
 
 protected:
+	struct compareMac {
+		bool operator()(packet_structure const * a,
+						packet_structure const * b) {
+			return (a->mac).compare(b->mac);
+		}
+	};
 	bool filterTime;
 		std::string startTime;
 		std::string endTime;
 
 	bool filterDate;
 		std::string startDate;
-		std::strnig endDate;
+		std::string endDate;
 
 	bool filterDay;
-		vector<std::string> matchDays;
+		std::vector<std::string> matchDays;
 
 	bool filterMonth;
-		vector<std::string> matchMonths;
+		std::vector<std::string> matchMonths;
 
 	bool filterDbm;
 		int maxDbm;
 		int minDbm;
 
 	bool uniqMac;
+		bool uniqMacFirst;
+		bool uniqMacLast;
+
+	bool blacklist;
+	bool whitelist;
 
 private:
 };

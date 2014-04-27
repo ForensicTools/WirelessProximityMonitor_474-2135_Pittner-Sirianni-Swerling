@@ -2,10 +2,10 @@
 
 static const int present_field_align[5] = {8,1,1,4,2};
 
-Capture::Capture()
+Capture::Capture(std::string devName)
 {	
 	packet = NULL;
-	handler = pcap_create("wlan0",errbuff); //Creates handle for device
+	handler = pcap_create(devName.c_str(), errbuff); //Creates handle for device
 
 	if (handler == NULL) 			//Ensures capture handle was created
 	{
@@ -18,7 +18,7 @@ Capture::Capture()
 	}
 
 	//Set capture settings
-	pcap_set_snaplen(handler, 1500);	//Packet buffer size
+	pcap_set_snaplen(handler, 128);	//Packet buffer size
 	pcap_set_promisc(handler, 0);	//Promiscuous mode 0=off
 	pcap_set_timeout(handler, 512);	//Time waiting for packets in ms
 
@@ -48,11 +48,13 @@ packet_structure Capture::CapturePacket() {
 	std::bitset<32> present_fields (rh_ptr->it_present);
 
 	//Find offset for the dB data
-	for (int i = 0; i <= 4; i++) {
-		if (present_fields[i] == 1) {
+	for (int i = 0; i <= 4; i++)
+		if (present_fields[i] == 1)
 			db_offset_size += present_field_align[i];
-		}
-	}
+
+	//There is always a buffer for "Rate" field
+	if(present_fields[2] == 0)
+		db_offset_size++;
 
 	//dBm value
 	uint8_t	*db_antenna_signal 
@@ -68,14 +70,16 @@ packet_structure Capture::CapturePacket() {
 
 	//MAC column - MAC addr Changes based on flags present
 	if(mh_ptr->fromDS == 0) {
-		copyArray(packet_data.addr, mh_ptr->addr2);
+		packet_data.mac = convertArray(mh_ptr->addr2);
 	}
 	else if(mh_ptr->toDS == 0) {
-		copyArray(packet_data.addr, mh_ptr->addr3);
+		packet_data.mac = convertArray(mh_ptr->addr3);
 	}
 	else {
-		copyArray(packet_data.addr, mh_ptr->addr4);
+		packet_data.mac = convertArray(mh_ptr->addr4);
 	}
+	std::transform( (packet_data.mac).begin(), (packet_data.mac).end(),
+		(packet_data.mac).begin(), ::toupper);
 
 	//Signal strength column
 	packet_data.dbm = *db_antenna_signal;
@@ -88,8 +92,15 @@ packet_structure Capture::CapturePacket() {
 	}
 }
 
-void Capture::copyArray(uint8_t copy[6], uint8_t orig[6]) {
+std::string Capture::convertArray(uint8_t addr[6]) {
+	std::stringstream ss;
+	ss << std::hex << std::setfill('0');
+
 	for(int i = 0; i <= 5; i++) {
-		copy[i] = orig[i];
-	}
+		if(i!=0) {
+			ss << ":";
+		}
+		ss << std::setw(2) << static_cast<unsigned>(addr[i]);
+	} 
+	return ss.str();
 }

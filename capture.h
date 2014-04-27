@@ -8,16 +8,20 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <sstream>
+#include <string>
+#include <iomanip>
+#include <algorithm>
 #include "rtheader.h"
 #include "wheader.h"
 #include "PacketStructure.h"
 
 class Capture {
 public:
-	Capture();
+	Capture(std::string);
 	virtual ~Capture();
 	packet_structure CapturePacket(void);
-	void copyArray(uint8_t[], uint8_t[]);
+	std::string convertArray(uint8_t[]);
 
 	static const int RADIOTAP_HEADER_SIZE = 8;
 	const u_char *packet; 			//Holds pcap_next packet data

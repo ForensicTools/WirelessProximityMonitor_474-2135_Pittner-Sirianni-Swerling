@@ -6,9 +6,10 @@
 #include "Jzon.h"
 #include <time.h>
 #include <list>
+#include "ReadWriteFiles.h"
 
 using namespace std;
-#include "ReadWriteFiles.h"
+
 
 /*
 Name:  readFromFile
@@ -19,7 +20,7 @@ of Packet structs.
 */
 void ReadWrite::readFromFile(const char* in_file_name)
 {
-	Packet packet_in;	// struct object called "packet_in"
+	struct packet_structure packet_in;	// struct object called "packet_in"
 	Jzon::Object capture;	// create Jzon object called "capture"
 	
 	// calls Jzon file reading function (ReadFile) and passes the parameters "in_file_name" and the capture object
@@ -44,12 +45,12 @@ void ReadWrite::readFromFile(const char* in_file_name)
 					{
 						time_t time_stamp = node.ToFloat(); 
 						cout << time_stamp;
-						packet_in.date_time = time_stamp;
+						packet_in.epoch_time = time_stamp;
 					}
 					else
 					{
 						cout << node.ToFloat();
-						packet_in.sig_str = node.ToFloat();
+						packet_in.dbm = node.ToFloat();
 					}
 					break;
 			}
@@ -66,20 +67,21 @@ Purpose:  takes a list of Packet structs that are received,
 loops through the list and reads the data for each packet, and 
 writes the packet data to a file in JSON format.
 */			
-void ReadWrite::writeToFile(const char* out_file_name, list<Packet> capture)
+void ReadWrite::writeToFile(const char* out_file_name, list<packet_structure> capture)
 {
 	Jzon::Object packet_data;
 	string mac_address;
 	int epoch_time;
 	int signal_strength;
 
-	list<Packet>::iterator p;
+	list<packet_structure>::iterator p;
 
 	for(p = capture.begin(); p != capture.end(); p++)
 	{
+		packet_data.Clear();
 		mac_address = p->mac;
-		epoch_time = p->date_time;
-		signal_strength = p->sig_str;
+		epoch_time = p->epoch_time;
+		signal_strength = p->dbm;
 		
 		packet_data.Add("MAC Address", mac_address);
 		packet_data.Add("Date/Time", epoch_time);
