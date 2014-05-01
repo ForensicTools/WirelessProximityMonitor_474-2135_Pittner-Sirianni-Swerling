@@ -896,8 +896,8 @@ namespace Jzon
 	}
 	void Writer::writeObject(const Object &node, unsigned int level)
 	{
+		
 		result += "{" + fi->GetNewline();
-
 		for (Object::const_iterator it = node.begin(); it != node.end(); ++it)
 		{
 			const std::string &name = (*it).first;
@@ -905,11 +905,12 @@ namespace Jzon
 
 			if (it != node.begin())
 				result += "," + fi->GetNewline();
+
 			result += fi->GetIndentation(level+1) + "\""+name+"\"" + ":" + fi->GetSpacing();
 			writeNode(value, level+1);
 		}
-
 		result += fi->GetNewline() + fi->GetIndentation(level) + "}";
+
 	}
 	void Writer::writeArray(const Array &node, unsigned int level)
 	{

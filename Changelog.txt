@@ -17,12 +17,26 @@
 
 [4/20/2014]
 	Began GUI merger with functions
-	Save and Open Capabilites
+	Save and Open Capabilities
 	Initial Filter structure
 	
-[What's Next]
-	Complete capture/dsplay filters
-	Finish GUI merger
+[4/27/2014]
+	Finished merger of available classes
+	Fixed issues with saving
+	More complete filtering
+		Unique MACs
+		Time
+		Date
+		Day of the week
+		Month of the year
 
+[4/30/2014]
+	Fully functional capture and save options
+	Added more filtering options
+		White list MACs
+		Black list MACs
+		Search single MAC
+	Makefile for easier compiling
+	
 [Tenative]
 	Graphing functions

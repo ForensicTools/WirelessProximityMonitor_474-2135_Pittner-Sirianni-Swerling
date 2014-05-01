@@ -1,3 +1,17 @@
+/*/
+ * Project: Wireless Proximity Analyzer
+ *
+ * Repository: https://github.com/ForensicTools/WirelessProximityMonitor_474-2135_Pittner-Sirianni-Swerling
+ *
+ * Authors:
+ *		Joe Sirianni
+ *		Cal Pittner
+ *		Ross Swerling
+ * 
+ * License: Apache v2
+/*/
+
+
 #ifndef WHEADER_H
 #define WHEADER_H
 
