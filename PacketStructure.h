@@ -12,16 +12,17 @@
 /*/
 
 
-#include <gtkmm/application.h>
-#include "mainwindow.h"
+#ifndef PACKETSTRUCTURE_H
+#define PACKETSTRUCTURE_H
 
-int main(int argc, char *argv[])
-{
-	Glib::RefPtr<Gtk::Application> app =
-	Gtk::Application::create(argc, argv,
-	  "main.window.base");
+#include <time.h>
+#include <iostream>
+#include <string>
 
-	MainWindow window;
-	
-	return app->run(window);
-}
+struct packet_structure {
+	time_t 		epoch_time;
+	std::string	mac;
+	int 		dbm;
+};
+
+#endif //PACKETSTRUCTURE_H

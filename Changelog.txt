@@ -18,15 +18,36 @@
 	Dynamic RadioTap parsing
 	   -Proper signal strength on all platforms
 	   -Discards bad FCS packets
-	
-[What's Next]
-	Capture filters
-	Display filters
-	Analytic functions
-	Implement capturing into GUI	
 
+[4/20/2014]
+	Began GUI merger with functions
+	Save and Open Capabilities
+	Initial Filter structure
+	
+[4/27/2014]
+	Finished merger of available classes
+	Fixed issues with saving
+	More complete filtering
+		Unique MACs
+		Time
+		Date
+		Day of the week
+		Month of the year
+
+[4/30/2014]
+	Fully functional capture and save options
+	Added more filtering options
+		White list MACs
+		Black list MACs
+		Search single MAC
+	Makefile for easier compiling
+	
 [Tenative]
+<<<<<<< HEAD
 	Bluetooth
 =======
 	White / Black list Filtering
 >>>>>>> 3fe604b8dd8c01c748a948c4184ba294035b50fb
+=======
+	Graphing functions
+>>>>>>> SirianniJ-master

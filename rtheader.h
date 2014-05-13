@@ -1,3 +1,17 @@
+/*/
+ * Project: Wireless Proximity Analyzer
+ *
+ * Repository: https://github.com/ForensicTools/WirelessProximityMonitor_474-2135_Pittner-Sirianni-Swerling
+ *
+ * Authors:
+ *		Joe Sirianni
+ *		Cal Pittner
+ *		Ross Swerling
+ * 
+ * License: Apache v2
+/*/
+
+
 #ifndef RTHEADER_H
 #define RTHEADER_H
 
@@ -10,14 +24,5 @@ struct ieee80211_radiotap_header {
 	uint32_t	it_present;		//Fields used
 } __attribute__((__packed__));
 
-//Static fields based on current development machine
-struct rtapdata {
-	uint8_t		rate;
-	uint8_t		fhss_hop_set;
-	uint8_t		fhss_hop_pattern;
-	uint8_t		antenna_signal;
-	uint8_t		antenna_noise;
-	uint16_t	tx_attenuation;
-	uint8_t		db_antenna_signal;
-} __attribute__((__packed__));
+
 #endif //RTHEADER_H
