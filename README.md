@@ -59,7 +59,7 @@ This tool was created for the Unix Forensics course at Rochester Institute of Te
 	* Signal Strength:  **dbm=[min_dmb]-[max_dbm]**
 		* **Format numbers will be turned negative (Ex. dbm=20-50)**
 	* Unique MAC Addresses: **uniqMac=[true]**
-		* **Format uniqMac=true
+		* **Format uniqMac=true**
 	* Single MAC Address: **mac=[MAC_address]**
 		* **Format Case & Width sensitive (Ex. 00:5A:42:E9:56:02)**
 	* Black list MAC addresses: **blackList=[saved_text_file]**
@@ -72,6 +72,7 @@ This tool was created for the Unix Forensics course at Rochester Institute of Te
 	2.	Click the "Graph" option on the menu bar under "View"
 	3.	Firefox will open with the most recently saved capture
 	 * **Note: This requires an internet connection which this tool may have broken while running**
+	 
 #### **Authors:**
 * Joseph Sirianni
 * Ross Swerling
