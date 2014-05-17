@@ -33,7 +33,7 @@ public:
 	virtual ~FILTER();
 
 	//Returns if the packets should be filtered
-	bool filterPacket(packet_structure, std::list<packet_structure>);
+	bool filterPacket(struct packet_structure, std::list<packet_structure> *);
 
 	//Parses user input for filter settings
 	//Sets variables

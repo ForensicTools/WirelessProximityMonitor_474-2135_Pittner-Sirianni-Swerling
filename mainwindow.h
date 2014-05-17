@@ -79,6 +79,7 @@ public:
 	std::vector<Gtk::RadioButton *>  dev_radio_btn;
 
 protected:
+	//Window Items
 	void on_open_click(void);	//Creates new window for opening capture
 	void on_open_click_init(Gtk::Entry *);	//Opens capture
 	void on_open_cancel_click(void);	//Closes open window
@@ -86,13 +87,18 @@ protected:
 	void on_save_click_init(Gtk::Entry *); //Saves capture
 	void on_save_cancel_click(void);	//Closes save window
 	void on_main_quit_click(void);		//Closes main program
-	void enable_filter(void);	//Enables display filter
-	void clear_filter(void);	//Clears display filter
+	void on_stats_click(void);	//Creates statistics window
+	void on_stats_ok_click(void);	//Closes stats window
+	void on_graph_click(void);	//Create graphing window
 	void capture_window(void);	//Creates window for capture settings
 	void capture_window_ok_btn(Gtk::Entry *);	//Initializes capture
 	void capture_window_cancel_btn(void);	//Closes caputre window
 	void error_window(std::string);	//Error window
 	void error_window_btn(void);	//Closes error window
+
+	//Main Window items
+	void enable_filter(void);	//Enables display filter
+	void clear_filter(void);	//Clears display filter
 	void * printCapture(void);		//Captures packets
 	void print_packet(struct packet_structure);	//Prints packets
 	void captureStopBtn(void);	//stops capture
@@ -117,6 +123,7 @@ protected:
 	Gtk::Window *captureWindow;
 	Gtk::Window *saveWindow;
 	Gtk::Window *openWindow;
+	Gtk::Window *statsWindow;
 	Gtk::Window *errorWindow;
 
 	//The device being captured on
@@ -134,6 +141,11 @@ private:
 	Gtk::Menu *capturemenu;
 		Gtk::MenuItem *captureitem_start;
 		Gtk::MenuItem *captureitem_stop;
+
+	Gtk::MenuItem *menuitem_view;
+	Gtk::Menu *viewmenu;
+		Gtk::MenuItem *viewitem_stats;
+		Gtk::MenuItem *viewitem_graph;
 };
 
 #endif //GTKMM_MAINWINDOW_H

@@ -30,13 +30,10 @@ to handle information for each packet
 class ReadWrite
 {
 public:
-	// creats a list of Packet structs 	
-	list<packet_structure> pcap;
-		
 	// read function reads in the JSON formatted data from file <in_file_name>
 	void readFromFile(const char* in_file_name, std::list<packet_structure> *filelist);
 	
 	// write function writes the JSON formatted data to file <out_file_name>
-	void writeToFile(const char* out_file_name, list<packet_structure> capture);
+	void writeToFile(const char* out_file_name, std::list<packet_structure> capture);
 };
 #endif

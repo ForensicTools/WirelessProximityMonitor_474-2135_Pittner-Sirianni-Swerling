@@ -79,6 +79,25 @@ MainWindow::MainWindow()
 		capturemenu->append(*captureitem_start);
 		capturemenu->append(*captureitem_stop);
 
+	/*/
+	 *	Members of menu bar
+	 *		View
+	 *		  Statistics
+	 *		  Graph
+	/*/
+	menuitem_view = Gtk::manage(new Gtk::MenuItem("_View", true));
+		menubar->append(*menuitem_view);
+		viewmenu = Gtk::manage(new Gtk::Menu());
+		menuitem_view->set_submenu(*viewmenu);
+		viewitem_stats = Gtk::manage(new Gtk::MenuItem("_Statistics", true));
+		viewitem_graph = Gtk::manage(new Gtk::MenuItem("_Graph", true));
+		viewitem_stats->signal_activate().connect
+			(sigc::mem_fun(*this, &MainWindow::on_stats_click));
+		viewitem_graph->signal_activate().connect
+			(sigc::mem_fun(*this, &MainWindow::on_graph_click));
+		viewmenu->append(*viewitem_stats);
+		viewmenu->append(*viewitem_graph);
+
 	//Organizes widgets
     Gtk::Grid *grid = Gtk::manage(new Gtk::Grid);
     grid->set_border_width(10);
@@ -147,6 +166,7 @@ void MainWindow::captureStopBtn() {
 	//Set global variable for caputring
 	//Threads will end soon after
 	capturing = false;
+	treeview->queue_draw();
 }
 
 void MainWindow::enable_filter(void) {
@@ -166,7 +186,7 @@ void MainWindow::enable_filter(void) {
 			it != packetsCaptured.end(); it++) {
 
 			//Checks them against display filter
-			if(!displayFilter.filterPacket(*it, packetsFiltered))
+			if(!displayFilter.filterPacket(*it, &packetsFiltered))
 			{
 				//Push & print
 				packetsFiltered.push_front(*it);
@@ -196,6 +216,8 @@ void MainWindow::clear_filter(void) {
 	for(std::list<packet_structure>::iterator it = packetsCaptured.begin(); 
 			it != packetsCaptured.end(); it++) {
 		print_packet(*it);
+		packetsFiltered.push_front(*it);
+
 	}
 
 	//Unlock GUI
@@ -238,15 +260,15 @@ void * MainWindow::printCapture(void)
 			pthread_mutex_lock(&mutex);
 
 			//Check capture filter
-			if(!captureFilter.filterPacket(packet, packetsCaptured)) {
+			if(!captureFilter.filterPacket(packet, &packetsCaptured)) {
 				packetsCaptured.push_back(packet); //Add to list
 
 				//Check display filter
-				if(!displayFilter.filterPacket(packet, packetsFiltered))
+				if(!displayFilter.filterPacket(packet, &packetsFiltered))
 				{
 					packetsFiltered.push_front(packet); //Add to list
 					print_packet(packet); //Print to GUI
-					usleep(1000 * 200);
+					usleep(1000 * 50);
 				}
 			}
 			
@@ -256,7 +278,7 @@ void * MainWindow::printCapture(void)
 		//Stop channel itterator thread
 		pthread_exit(&chanThread);
 	}
-	
+	capturing = false;
 	return 0;
 }
 
@@ -290,9 +312,8 @@ void MainWindow::print_packet(struct packet_structure packet) {
 	row[columns.col_date] = dateSs.str();
 	row[columns.col_time] = timeSs.str();
 	row[columns.col_mac] = packet.mac;
-	//row[columns.col_dbm] = packetsFiltered.size();
 	row[columns.col_dbm] = packet.dbm;
-	treeview->queue_draw();
+	//treeview->queue_draw();
 }
 
 void MainWindow::on_main_quit_click()
@@ -535,6 +556,190 @@ void MainWindow::capture_window_ok_btn(Gtk::Entry *filterEntry) {
 
 void MainWindow::capture_window_cancel_btn(void) {
 	captureWindow->hide();
+}
+
+void MainWindow::on_stats_click(void) {
+	std::stringstream tmpSs;
+	time_t epoch_time; //Holds packet time
+	struct tm *ptm; //Convert to time struct
+	struct packet_structure packet;
+	tmpSs << std::setfill('0');
+
+	//Window init
+	statsWindow = new Gtk::Window();
+
+	//Window Settings
+	statsWindow->set_title ("Statistics");
+	statsWindow->set_border_width(10);
+	statsWindow->set_default_size(200, 100);
+	statsWindow->set_position(Gtk::WIN_POS_CENTER);
+
+	//Window widgets
+	Gtk::Grid *grid = Gtk::manage(new Gtk::Grid);
+	statsWindow->add(*grid);
+
+	Gtk::Label *capture_header = new Gtk::Label();
+	Gtk::Label *capture_start = new Gtk::Label();
+	Gtk::Label *capture_start_value = new Gtk::Label();
+	Gtk::Label *capture_end = new Gtk::Label();
+	Gtk::Label *capture_end_value = new Gtk::Label();
+	Gtk::Label *capture_count = new Gtk::Label();
+	Gtk::Label *capture_count_value = new Gtk::Label();
+
+	Gtk::Label *display_header = new Gtk::Label();
+	Gtk::Label *display_start = new Gtk::Label();
+	Gtk::Label *display_start_value = new Gtk::Label();
+	Gtk::Label *display_end = new Gtk::Label();
+	Gtk::Label *display_end_value = new Gtk::Label();
+	Gtk::Label *display_count = new Gtk::Label();
+	Gtk::Label *display_count_value = new Gtk::Label();
+
+	Gtk::Button *ok_btn = new Gtk::Button("Ok");
+
+	capture_header->set_hexpand(true);
+	capture_start->set_hexpand(true);
+	capture_start_value->set_hexpand(true);
+	capture_end->set_hexpand(true);
+	capture_end_value->set_hexpand(true);
+	capture_count->set_hexpand(true);
+	capture_count_value->set_hexpand(true);
+
+	display_header->set_hexpand(true);
+	display_start->set_hexpand(true);
+	display_start_value->set_hexpand(true);
+	display_end->set_hexpand(true);
+	display_end_value->set_hexpand(true);
+	display_count->set_hexpand(true);
+	display_count_value->set_hexpand(true);
+
+
+	capture_header->set_markup("Capture Statistics");
+
+	tmpSs.str(std::string());
+	packet = packetsCaptured.front();
+	epoch_time = packet.epoch_time; //Holds packet time
+	ptm = gmtime (&epoch_time); //Convert to time struct
+	//Date in readable format
+	tmpSs << std::setw(4) << static_cast<unsigned>(ptm->tm_year+1900);
+	tmpSs << "/";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_mon+1);
+	tmpSs << "/";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_mday);
+	tmpSs << " ";
+	//Time in readable format
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_hour);
+	tmpSs << ":";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_min);
+	tmpSs << ":";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_sec);
+	capture_start->set_markup("Start Date/Time:");
+	capture_start_value->set_markup(tmpSs.str());
+
+	tmpSs.str(std::string());
+	packet = packetsCaptured.back();
+	epoch_time = packet.epoch_time; //Holds packet time
+	ptm = gmtime (&epoch_time); //Convert to time struct
+	//Date in readable format
+	tmpSs << std::setw(4) << static_cast<unsigned>(ptm->tm_year+1900);
+	tmpSs << "/";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_mon+1);
+	tmpSs << "/";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_mday);
+	tmpSs << " ";
+	//Time in readable format
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_hour);
+	tmpSs << ":";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_min);
+	tmpSs << ":";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_sec);
+	capture_end->set_markup("End Date/Time:");
+	capture_end_value->set_markup(tmpSs.str());
+
+	tmpSs.str(std::string());
+	tmpSs << packetsCaptured.size();
+	capture_count->set_markup("Packet Count:");
+	capture_count_value->set_markup(tmpSs.str());
+
+
+
+	display_header->set_markup("Display Statistics");
+
+	tmpSs.str(std::string());
+	packet = packetsFiltered.back();
+	epoch_time = packet.epoch_time; //Holds packet time
+	ptm = gmtime (&epoch_time); //Convert to time struct
+	//Date in readable format
+	tmpSs << std::setw(4) << static_cast<unsigned>(ptm->tm_year+1900);
+	tmpSs << "/";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_mon+1);
+	tmpSs << "/";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_mday);
+	tmpSs << " ";
+	//Time in readable format
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_hour);
+	tmpSs << ":";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_min);
+	tmpSs << ":";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_sec);
+	display_start->set_markup("Start Date/Time");
+	display_start_value->set_markup(tmpSs.str());
+
+	tmpSs.str(std::string());
+	packet = packetsFiltered.front();
+	epoch_time = packet.epoch_time; //Holds packet time
+	ptm = gmtime (&epoch_time); //Convert to time struct
+	//Date in readable format
+	tmpSs << std::setw(4) << static_cast<unsigned>(ptm->tm_year+1900);
+	tmpSs << "/";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_mon+1);
+	tmpSs << "/";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_mday);
+	tmpSs << " ";
+	//Time in readable format
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_hour);
+	tmpSs << ":";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_min);
+	tmpSs << ":";
+	tmpSs << std::setw(2) << static_cast<unsigned>(ptm->tm_sec);
+	display_end->set_markup("End Date/Time");
+	display_end_value->set_markup(tmpSs.str());
+
+	tmpSs.str(std::string());
+	tmpSs << packetsFiltered.size();
+	display_count->set_markup("Packet Count");
+	display_count_value->set_markup(tmpSs.str());
+
+	//Connect button to function
+	ok_btn->signal_clicked().connect
+		(sigc::mem_fun(*this, &MainWindow::on_stats_ok_click) );
+
+	grid->attach(*capture_header, 0, 0, 1, 1);
+	grid->attach(*capture_start, 0, 1, 1, 1);
+	grid->attach_next_to(*capture_start_value, *capture_start, Gtk::POS_RIGHT, 1, 1);
+	grid->attach(*capture_end, 0, 2, 1, 1);
+	grid->attach_next_to(*capture_end_value, *capture_end, Gtk::POS_RIGHT, 1, 1);
+	grid->attach(*capture_count, 0, 3, 1, 1);
+	grid->attach_next_to(*capture_count_value, *capture_count, Gtk::POS_RIGHT, 1, 1);
+
+	grid->attach(*display_header, 0, 5, 1, 1);
+	grid->attach(*display_start, 0, 6, 1, 1);
+	grid->attach_next_to(*display_start_value, *display_start, Gtk::POS_RIGHT, 1, 1);
+	grid->attach(*display_end, 0, 7, 1, 1);
+	grid->attach_next_to(*display_end_value, *display_end, Gtk::POS_RIGHT, 1, 1);
+	grid->attach(*display_count, 0, 8, 1, 1);
+	grid->attach_next_to(*display_count_value, *display_count, Gtk::POS_RIGHT, 1, 1);
+
+	grid->attach(*ok_btn, 1, 9, 1, 1);
+
+	statsWindow->show_all();
+}
+
+void MainWindow::on_stats_ok_click(void) {
+	statsWindow->hide();
+}
+
+void MainWindow::on_graph_click(void) {
+	system("perl chart/launchChart.pl");
 }
 
 void MainWindow::error_window(std::string error) {

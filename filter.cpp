@@ -36,8 +36,8 @@ FILTER::~FILTER() {
 
 }
 
-bool FILTER::filterPacket(packet_structure packet,
-				std::list<packet_structure> packetList) {
+bool FILTER::filterPacket(struct packet_structure packet,
+				std::list<packet_structure> *packetList) {
 
 	//Default answer is don't filter packet
 	bool answer = false;
@@ -134,8 +134,8 @@ bool FILTER::filterPacket(packet_structure packet,
 
 	if(uniqMac == true && answer == false) {
 		//Checks packet MAC against all packets in the display filter list
-		for(std::list<packet_structure>::iterator it = packetList.begin(); 
-			it != packetList.end(); it++) {
+		for(std::list<packet_structure>::iterator it = packetList->begin(); 
+			it != packetList->end(); it++) {
 			if((it->mac).compare(packet.mac) == 0) {
 				answer = true;
 				break;
@@ -174,7 +174,7 @@ bool FILTER::setFilter(std::string filter) {
 	std::stringstream ss(filter); //Separates commands by spaces
 	std::istringstream intConv; //Used for converting string numbers to type int
 	std::string buff; //General string buffer
-	std::string args; //Holds arguments for commands
+	std::string args; //Holds arguments for commandsf
 	std::vector<std::string> commands; //Holds all commands
 
 	//Separates commands by spaces and inputs them into list
@@ -332,6 +332,7 @@ bool FILTER::setFilter(std::string filter) {
 			break;
 		}
 	}
+
 	return syntaxCheck;
 }
 

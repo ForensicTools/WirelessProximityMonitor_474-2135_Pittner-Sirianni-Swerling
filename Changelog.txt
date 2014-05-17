@@ -38,5 +38,8 @@
 		Search single MAC
 	Makefile for easier compiling
 	
-[Tenative]
-	Graphing functions
+[5/16/2014]
+	Increased stability
+	Statistics menu bar option
+	Graphing function
+	Changed JSON output format
